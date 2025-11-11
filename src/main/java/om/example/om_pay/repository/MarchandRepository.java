@@ -14,7 +14,5 @@ public interface MarchandRepository extends JpaRepository<Marchand, Long> {
     Optional<Marchand> findByCodeMarchand(String codeMarchand);
 
     boolean existsByCodeMarchand(String codeMarchand);
-
-  
     Optional<Marchand> findByNomCommercial(String nomCommercial);
 }

@@ -18,18 +18,15 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Origines autorisées (Frontend)
         configuration.setAllowedOrigins(Arrays.asList(
             "http://localhost:3000", 
             "http://localhost:4200"
         ));
         
-        // Méthodes HTTP autorisées
         configuration.setAllowedMethods(Arrays.asList(
             "GET", "POST", "PUT", "DELETE", "OPTIONS"
         ));
         
-        // Headers autorisés
         configuration.setAllowedHeaders(Arrays.asList(
             "Authorization", "Content-Type", "Accept"
         ));

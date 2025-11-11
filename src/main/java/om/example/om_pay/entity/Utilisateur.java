@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import om.example.om_pay.entity.enums.Role;
 import om.example.om_pay.entity.enums.Statut;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -64,6 +65,7 @@ public class Utilisateur {
 
     @OneToMany(mappedBy = "distributeur")
     private List<Transaction> operationsDistributeur;
+
 
 
 }

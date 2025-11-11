@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import om.example.om_pay.dto.request.ChangePasswordRequest;
 import om.example.om_pay.dto.request.LoginRequest;
 import om.example.om_pay.dto.request.RegisterRequest;
@@ -25,9 +27,7 @@ import om.example.om_pay.entity.Utilisateur;
 import om.example.om_pay.repository.UtilisateurRepository;
 import om.example.om_pay.utils.CookieUtil;
 
-/**
- * Contrôleur REST pour les endpoints d'authentification
- */
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -60,35 +60,73 @@ public class AuthController {
     }
 
     /**
-     * Connexion d'un utilisateur
+     * Étape 1 : Initiation de la connexion (vérification credentials + envoi OTP)
      * POST /api/auth/login
-     * Token stocké dans cookie HTTP-only ET retourné dans la réponse
      */
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(
-            @Valid @RequestBody LoginRequest request,
-            HttpServletResponse response) {
-        
-        AuthResponse authResponse = authService.login(request);
-        
-        // Stocker le token dans un cookie HTTP-only pour les clients web
-        cookieUtil.createJwtCookie(authResponse.getToken(), response);
-        
-        // Garder le token dans la réponse pour Swagger/Postman
-        // Les clients peuvent choisir d'utiliser le cookie ou le header Authorization
-        
-        ApiResponse<AuthResponse> apiResponse = ApiResponse.success(
-            "Connexion réussie. Token disponible dans cookie et réponse.",
-            authResponse
+    public ResponseEntity<ApiResponse<String>> initiateLogin(
+            @Valid @RequestBody LoginRequest request) {
+
+        authService.initiateLogin(request);
+
+        ApiResponse<String> apiResponse = ApiResponse.success(
+            "Code OTP envoyé à votre numéro de téléphone. Veuillez le saisir pour finaliser la connexion.",
+            null
         );
-        
+
         return ResponseEntity.ok(apiResponse);
     }
 
     /**
-     * Changement de mot de passe
-     * POST /api/auth/change-password
+     * Étape 2 : Finalisation de la connexion avec OTP
+     * POST /api/auth/verify-login
+     * Token stocké dans cookie HTTP-only ET retourné dans la réponse
      */
+    @PostMapping("/verify-login")
+    public ResponseEntity<ApiResponse<AuthResponse>> completeLoginWithOtp(
+            @Valid @RequestBody VerifyLoginRequest request,
+            HttpServletResponse response) {
+
+        AuthResponse authResponse = authService.completeLoginWithOtp(request.getTelephone(), request.getOtpCode());
+
+        cookieUtil.createJwtCookie(authResponse.getToken(), response);
+
+        ApiResponse<AuthResponse> apiResponse = ApiResponse.success(
+            "Connexion réussie. Token disponible dans cookie et réponse.",
+            authResponse
+        );
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    /**
+     * DTO pour la vérification du login avec OTP
+     */
+    public static class VerifyLoginRequest {
+        @NotBlank(message = "Le numéro de téléphone est obligatoire")
+        private String telephone;
+
+        @NotBlank(message = "Le code OTP est obligatoire")
+        @Pattern(regexp = "^[0-9]{6}$", message = "Le code OTP doit contenir exactement 6 chiffres")
+        private String otpCode;
+
+        public String getTelephone() {
+            return telephone;
+        }
+
+        public void setTelephone(String telephone) {
+            this.telephone = telephone;
+        }
+
+        public String getOtpCode() {
+            return otpCode;
+        }
+
+        public void setOtpCode(String otpCode) {
+            this.otpCode = otpCode;
+        }
+    }
+
     @PostMapping("/change-password")
     public ResponseEntity<ApiResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
         authService.changePassword(request);
@@ -113,7 +151,6 @@ public class AuthController {
         Utilisateur utilisateur = utilisateurRepository.findByTelephone(telephone)
                 .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
         
-        // Mapper vers DTO pour éviter lazy loading exception
         UtilisateurResponse userResponse = new UtilisateurResponse();
         userResponse.setId(utilisateur.getId());
         userResponse.setNom(utilisateur.getNom());

@@ -21,9 +21,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import om.example.om_pay.security.JwtTokenProvider;
 import om.example.om_pay.utils.CookieUtil;
 
-/**
- * Filtre JWT qui intercepte chaque requête HTTP pour valider le token
- */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 

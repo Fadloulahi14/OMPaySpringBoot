@@ -11,6 +11,8 @@ servers:
 tags:
   - name: Authentification
     description: Gestion de l'authentification et des sessions utilisateur
+  - name: OTP
+    description: Gestion des codes OTP (One Time Password) via SMS
   - name: Utilisateurs
     description: Gestion des utilisateurs (CRUD)
   - name: Comptes
@@ -78,11 +80,30 @@ components:
       properties:
         telephone:
           type: string
+          pattern: '^[0-9]{9}$'
           example: '771234567'
+          description: Numéro de téléphone à 9 chiffres (sans indicatif)
         motDePasse:
           type: string
           format: password
           example: Password123!
+
+    VerifyLoginRequest:
+      type: object
+      required:
+        - telephone
+        - otpCode
+      properties:
+        telephone:
+          type: string
+          pattern: '^[0-9]{9}$'
+          example: '771234567'
+          description: Numéro de téléphone à 9 chiffres (sans indicatif)
+        otpCode:
+          type: string
+          pattern: '^[0-9]{6}$'
+          example: '123456'
+          description: Code OTP à 6 chiffres reçu par SMS
 
     TransfertRequest:
       type: object
@@ -212,6 +233,34 @@ components:
           type: string
           format: date-time
 
+    SendOtpRequest:
+      type: object
+      required:
+        - phoneNumber
+      properties:
+        phoneNumber:
+          type: string
+          pattern: '^\+221[0-9]{9}$'
+          example: '+221771234567'
+          description: Numéro de téléphone au format international (+221XXXXXXXXX)
+
+    VerifyOtpRequest:
+      type: object
+      required:
+        - phoneNumber
+        - code
+      properties:
+        phoneNumber:
+          type: string
+          pattern: '^\+221[0-9]{9}$'
+          example: '+221771234567'
+          description: Numéro de téléphone au format international (+221XXXXXXXXX)
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          example: '123456'
+          description: Code OTP à 6 chiffres
+
 paths:
   /api/auth/register:
     post:
@@ -238,8 +287,10 @@ paths:
     post:
       tags:
         - Authentification
-      summary: Connexion utilisateur
-      description: Authentifier un utilisateur
+      summary: Étape 1 - Initiation de la connexion
+      description: |
+        Vérifie les credentials de l'utilisateur et envoie un code OTP par SMS.
+        Le code OTP expire après 5 minutes.
       security: []
       requestBody:
         required: true
@@ -249,7 +300,42 @@ paths:
               $ref: '#/components/schemas/LoginRequest'
       responses:
         '200':
-          description: Connexion réussie
+          description: Code OTP envoyé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: Téléphone ou mot de passe incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/auth/verify-login:
+    post:
+      tags:
+        - Authentification
+      summary: Étape 2 - Finalisation de la connexion avec OTP
+      description: |
+        Vérifie le code OTP et finalise la connexion en générant un token JWT.
+        Le token est stocké dans un cookie HTTP-only et retourné dans la réponse.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyLoginRequest'
+      responses:
+        '200':
+          description: Connexion réussie - Token JWT généré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '401':
+          description: Code OTP invalide ou expiré
           content:
             application/json:
               schema:
@@ -459,3 +545,61 @@ paths:
       responses:
         '200':
           description: Liste des comptes
+
+  /api/otp/send:
+    post:
+      tags:
+        - OTP
+      summary: Envoyer un code OTP
+      description: |
+        Envoie un code de vérification OTP par SMS au numéro de téléphone fourni.
+        Le code expire après 5 minutes.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendOtpRequest'
+      responses:
+        '200':
+          description: Code OTP envoyé avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Erreur lors de l'envoi du code OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /api/otp/verify:
+    post:
+      tags:
+        - OTP
+      summary: Vérifier un code OTP
+      description: |
+        Vérifie la validité du code OTP fourni pour le numéro de téléphone.
+        Le code doit être utilisé dans les 5 minutes suivant son envoi.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOtpRequest'
+      responses:
+        '200':
+          description: Code OTP vérifié avec succès
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+        '400':
+          description: Code OTP invalide ou expiré
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
