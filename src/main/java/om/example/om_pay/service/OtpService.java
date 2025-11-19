@@ -65,7 +65,13 @@ public class OtpService {
             // Sauvegarder en base
             otpRepository.save(otp);
 
-            // Envoyer le SMS via Twilio
+            // MODE DEVELOPPEMENT : Afficher le code OTP dans les logs au lieu d'envoyer par SMS
+            logger.info("=== CODE OTP POUR {} : {} ===", phone, code);
+            logger.info("Ce code est valide pendant 5 minutes");
+            logger.warn("MODE DEVELOPPEMENT : Le SMS n'est pas envoyé, consultez les logs pour le code OTP");
+
+            // Commenté pour le développement - Envoi SMS via Twilio
+            /*
             Message message = Message.creator(
                 new PhoneNumber(phone),
                 new PhoneNumber(twilioPhoneNumber),
@@ -73,6 +79,7 @@ public class OtpService {
             ).create();
 
             logger.info("OTP envoyé avec succès au numéro {} - SID: {}", phone, message.getSid());
+            */
 
         } catch (Exception e) {
             logger.error("Erreur lors de l'envoi de l'OTP au {}: {}", phone, e.getMessage());

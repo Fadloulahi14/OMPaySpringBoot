@@ -17,9 +17,9 @@ public class CorsConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
+
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000", 
+            "http://127.0.0.1:4200",
             "http://localhost:4200"
         ));
         
@@ -36,6 +36,7 @@ public class CorsConfig {
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         
         return source;
     }
