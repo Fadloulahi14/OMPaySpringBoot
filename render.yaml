@@ -5,3 +5,19 @@ services:
     plan: free
     region: frankfurt
     dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SPRING_PROFILE
+        value: prod
+      - key: JWT_SECRET
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+databases:
+  - name: om_pay_db
+    databaseName: om_pay
+    user: om_pay_user
+    plan: free
