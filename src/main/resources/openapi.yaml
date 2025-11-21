@@ -3,8 +3,8 @@ info:
   title:OM PAY 
 
 servers:
-  # - url: https://om-pay-spring-boot-1.onrender.com
-  #   description: Serveur de production (Render)
+  - url: https://ompaymoblie.onrender.com
+    description: Serveur de production (Render)
   - url: http://localhost:8083
     description: Serveur de développement local
 
